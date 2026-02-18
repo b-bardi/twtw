@@ -39,3 +39,59 @@ EasyRSA-Start.bat
 
 18 - Acesse a pasta C:\Program Files\OpenVPN\easy-rsa\pki e copei o arquivo ca.crt e cole na pasta do cliente + id da estação. 
 
+19 -Dentro da pasta do cliente + id da estação deve ter os arquivos: 
+- cliente + ST + id da estação.key
+- cliente + ST + id da estação.crt
+- ta.key
+- ca.crt
+
+20 - Crie um arquivo .ovpn dentro da pasta do cliente + id da estação com o nome do cliente + ST + id da estação.ovpn e cole o conteudo abaixo:
+
+#
+# General
+#
+client
+persist-key
+persist-tun
+pull
+verb 0
+#
+# Binding
+#
+nobind
+#
+# Ciphers y Hardening
+#
+auth SHA1
+auth-nocache
+#Se agregan los dos formatos para que funcione con versiones nuevas y antiguas de OpenVPN
+data-ciphers AES-256-GCM:AES-256-CBC 
+comp-lzo
+key-direction 1
+remote-cert-tls server
+tls-client
+#
+# Network
+#
+dev tun
+remote Centinela.orpak-la.com 1194
+resolv-retry infinite
+#
+# Certificates
+#
+<ca>
+Pegar el Certificado CA.crt del Servidor
+</ca>
+<cert>
+Pegar el Certificado Centinela_JP_V3.2.2.crt del Certificado creado
+</cert>
+<key>
+Pegar el Certificado Centinela_JP_V3.2.2.key del Certificado creado
+</key>
+<tls-auth>
+Pegar el Certificado TA.Key del Servidor
+</tls-auth>
+
+21 - Altere o conteudo da linha 28 do arquivo ovpn para que ele receba o dominio publico do servidor, deve trocar o parametro Centinela.orpak-la.com pelo dominio publico do servidor. 
+
+22 -    

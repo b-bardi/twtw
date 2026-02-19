@@ -1,97 +1,240 @@
-Arquivo no formato .bat para automatização de criação de novos arquivos da OPENVPN.
+# Automatização de Criação de Arquivos OpenVPN
 
-O arquivo deve seguir os passos abaixo.
+Script `.bat` para automatização de criação e configuração de certificados OpenVPN.
 
-1 - Ao Iniciar o arquivo .bat, ele deve apresentar na tela a mensagem "Automatização de criação de novos arquivos da OPENVPN"
+## Pré-requisitos
 
-2 - Solicitar ao usuario que insira o nome do cliente, ex: "Cliente" e guardar essa informação em uma variavel.
+- OpenVPN instalado em `C:\Program Files\OpenVPN\`
+- EasyRSA configurado em `C:\Program Files\OpenVPN\easy-rsa\`
+- Executar o script como **Administrador**
 
-3 - Solicitar ao usuario que insira o id da estação, ex: "1" e guardar essa informação em uma variavel.
+## Como Usar
 
-4 - Solicitar ao usuario que insira o dominio publico do servidor e guardar essa informação em uma variavel.
+Execute o arquivo `openvpn_automation.bat` e siga as instruções na tela. O script irá solicitar:
+- **Nome do cliente** (ex: `Cliente`)
+- **ID da estação** (ex: `1`)
+- **Domínio público do servidor** (ex: `meuservidor.com`)
 
-5 - Deve apresentar na tela a mensagem "CRIANDO PASTAS"
+## Estrutura de Saída
 
-6 - Deve criar uma pasta no mesmo local de execução do .bat com o nome do cliente.
+Após a execução, a seguinte estrutura será criada:
 
-7 - Deve criar uma pasta dentro da pasta do cliente com o nome do id da estação.
+```
+[local do .bat]/
+└── Cliente/
+    └── 1/
+        ├── ClienteST1.key
+        ├── ClienteST1.crt
+        ├── ClienteST1.ovpn
+        ├── ta.key
+        └── ca.crt
+```
 
-8 - Deve apresentar na tela a mensagem "PASTAS CRIADAS COM SUCESSO"
+## Comandos do Script (.bat)
 
-9 - Deve apresentar na tela "AGUARDE, ARQUIVOS SENDO CRIADOS".
+### Passo 1 — Configurações Iniciais
 
-10 - As proximas etapas não devem ser mostradas para o usuario.
+```bat
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+```
 
-11 - Execute o comando cd C:\Program Files\OpenVPN\easy-rsa\
-EasyRSA-Start.bat
+### Passo 2 — Mensagem Inicial
 
-12 - Execute o comando ./easyrsa --batch --silent --silent-ssl --req-cn="Nombre del Certificado" gen-req Nombre del Certificado nopass onde o "Nombre del Certificado" será a variavel do nome do cliente + ST + id da estação. Neste comando onde tiver "" deve ser mantido
+```bat
+echo ============================================================
+echo   Automatizacao de criacao de novos arquivos da OPENVPN
+echo ============================================================
+```
 
-13 - Execute o comando ./easyrsa --batch --silent --silent-ssl --days=3650 sign-req client Nombre del Certificado onde o Nombre del Certificado será a variavel do nome do cliente + ST + id da estação.
+### Passo 3 — Coleta de Dados do Usuário
 
-14 - As proximas etapas será pegar os arquivos criados com o comando 11 e 12.
+```bat
+set /p CLIENTE="Insira o nome do cliente: "
+set /p ID_ESTACAO="Insira o id da estacao: "
+set /p DOMINIO="Insira o dominio publico do servidor: "
+```
 
-15 - Acesse a pasta C:\Program Files\OpenVPN\easy-rsa\pki\private e copie o arquivo que tem o nome do cliente + ST + id da estação com a extensão .key e cole na pasta do cliente + id da estação.
+### Passo 4 — Montagem do Nome do Certificado
 
-16 - Acesse a pasta C:\Program Files\OpenVPN\easy-rsa\pki\issued e copie o arquivo que tem o nome do cliente + ST + id da estação com a extensão .crt e cole na pasta do cliente + id da estação.
+O nome do certificado é composto por: `cliente + ST + id da estação`.
 
-17 - Acesse a pasta C:\Program Files\OpenVPN\easy-rsa\keys e copie o arquivo ta.key e cole na pasta do cliente + id da estação. 
+```bat
+set "CERT_NAME=%CLIENTE%ST%ID_ESTACAO%"
+```
 
-18 - Acesse a pasta C:\Program Files\OpenVPN\easy-rsa\pki e copei o arquivo ca.crt e cole na pasta do cliente + id da estação. 
+### Passo 5 — Criação de Pastas
 
-19 -Dentro da pasta do cliente + id da estação deve ter os arquivos: 
-- cliente + ST + id da estação.key
-- cliente + ST + id da estação.crt
-- ta.key
-- ca.crt
+```bat
+echo CRIANDO PASTAS
 
-20 - Crie um arquivo .ovpn dentro da pasta do cliente + id da estação com o nome do cliente + ST + id da estação.ovpn e cole o conteudo abaixo:
+if not exist "%~dp0%CLIENTE%" (
+    mkdir "%~dp0%CLIENTE%"
+)
 
-#
-# General
-#
-client
-persist-key
-persist-tun
-pull
-verb 0
-#
-# Binding
-#
-nobind
-#
-# Ciphers y Hardening
-#
-auth SHA1
-auth-nocache
-#Se agregan los dos formatos para que funcione con versiones nuevas y antiguas de OpenVPN
-data-ciphers AES-256-GCM:AES-256-CBC 
-comp-lzo
-key-direction 1
-remote-cert-tls server
-tls-client
-#
-# Network
-#
-dev tun
-remote Centinela.orpak-la.com 1194
-resolv-retry infinite
-#
-# Certificates
-#
-<ca>
-Pegar el Certificado CA.crt del Servidor
-</ca>
-<cert>
-Pegar el Certificado Centinela_JP_V3.2.2.crt del Certificado creado
-</cert>
-<key>
-Pegar el Certificado Centinela_JP_V3.2.2.key del Certificado creado
-</key>
-<tls-auth>
-Pegar el Certificado TA.Key del Servidor
-</tls-auth>
+set "DEST_DIR=%~dp0%CLIENTE%\%ID_ESTACAO%"
+if not exist "%DEST_DIR%" (
+    mkdir "%DEST_DIR%"
+)
 
-21 - Altere o conteudo da linha 28 do arquivo ovpn para que ele receba o dominio publico do servidor, deve trocar o parametro Centinela.orpak-la.com pelo dominio publico do servidor. 
+echo PASTAS CRIADAS COM SUCESSO
+```
 
-22 - As proximas etapas serão a edição dos certificados dentro do arquivo ovpn, deve trocar o conteudo entre as tags <ca>, <cert>, <key> e <tls-auth> pelos certificados criados. Na tag <ca> deve ser colado o conteudo do arquivo ca.crt, na tag <cert> deve ser colado o conteudo entre -----BEGIN CERTIFICATE----- e -----END CERTIFICATE----- do arquivo cliente + ST + id da estação.crt, na tag <key> deve ser colado o conteudo entre -----BEGIN PRIVATE KEY----- e -----END PRIVATE KEY----- do arquivo cliente + ST + id da estação.key e na tag <tls-auth> deve ser colado o conteudo do arquivo ta.key.  
+### Passo 6 — Geração dos Certificados (EasyRSA)
+
+A partir deste ponto a saída é ocultada do usuário com `>nul 2>&1`.
+
+```bat
+echo AGUARDE, ARQUIVOS SENDO CRIADOS
+
+cd /d "C:\Program Files\OpenVPN\easy-rsa"
+call EasyRSA-Start.bat >nul 2>&1
+```
+
+#### Gerar requisição do certificado (gen-req)
+
+```bat
+call .\easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass >nul 2>&1
+```
+
+#### Assinar certificado (sign-req)
+
+```bat
+call .\easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME% >nul 2>&1
+```
+
+### Passo 7 — Cópia dos Arquivos Gerados
+
+```bat
+REM Copiar .key
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key" >nul 2>&1
+
+REM Copiar .crt
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt" >nul 2>&1
+
+REM Copiar ta.key
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\keys\ta.key" "%DEST_DIR%\ta.key" >nul 2>&1
+
+REM Copiar ca.crt
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\ca.crt" "%DEST_DIR%\ca.crt" >nul 2>&1
+```
+
+### Passo 8 — Criação do Arquivo .ovpn
+
+O arquivo `.ovpn` é criado com o domínio público informado pelo usuário e com os certificados embutidos.
+
+#### Cabeçalho do .ovpn
+
+```bat
+set "OVPN_FILE=%DEST_DIR%\%CERT_NAME%.ovpn"
+set "CA_FILE=%DEST_DIR%\ca.crt"
+set "CERT_FILE=%DEST_DIR%\%CERT_NAME%.crt"
+set "KEY_FILE=%DEST_DIR%\%CERT_NAME%.key"
+set "TA_FILE=%DEST_DIR%\ta.key"
+
+(
+    echo #
+    echo # General
+    echo #
+    echo client
+    echo persist-key
+    echo persist-tun
+    echo pull
+    echo verb 0
+    echo #
+    echo # Binding
+    echo #
+    echo nobind
+    echo #
+    echo # Ciphers y Hardening
+    echo #
+    echo auth SHA1
+    echo auth-nocache
+    echo #Se agregan los dos formatos para que funcione con versiones nuevas y antiguas de OpenVPN
+    echo data-ciphers AES-256-GCM:AES-256-CBC
+    echo comp-lzo
+    echo key-direction 1
+    echo remote-cert-tls server
+    echo tls-client
+    echo #
+    echo # Network
+    echo #
+    echo dev tun
+    echo remote %DOMINIO% 1194
+    echo resolv-retry infinite
+    echo #
+    echo # Certificates
+    echo #
+) > "%OVPN_FILE%"
+```
+
+#### Embutir certificado CA (ca.crt)
+
+```bat
+echo ^<ca^>>> "%OVPN_FILE%"
+type "%CA_FILE%" >> "%OVPN_FILE%"
+echo ^</ca^>>> "%OVPN_FILE%"
+```
+
+#### Embutir certificado do cliente (.crt)
+
+Extrai somente o bloco entre `-----BEGIN CERTIFICATE-----` e `-----END CERTIFICATE-----`.
+
+```bat
+echo ^<cert^>>> "%OVPN_FILE%"
+set "INSIDE_CERT=0"
+for /f "usebackq delims=" %%L in ("%CERT_FILE%") do (
+    if "%%L"=="-----BEGIN CERTIFICATE-----" (
+        set "INSIDE_CERT=1"
+    )
+    if !INSIDE_CERT!==1 (
+        echo %%L>> "%OVPN_FILE%"
+    )
+    if "%%L"=="-----END CERTIFICATE-----" (
+        set "INSIDE_CERT=0"
+    )
+)
+echo ^</cert^>>> "%OVPN_FILE%"
+```
+
+#### Embutir chave privada (.key)
+
+Extrai somente o bloco entre `-----BEGIN PRIVATE KEY-----` e `-----END PRIVATE KEY-----`.
+
+```bat
+echo ^<key^>>> "%OVPN_FILE%"
+set "INSIDE_KEY=0"
+for /f "usebackq delims=" %%L in ("%KEY_FILE%") do (
+    if "%%L"=="-----BEGIN PRIVATE KEY-----" (
+        set "INSIDE_KEY=1"
+    )
+    if !INSIDE_KEY!==1 (
+        echo %%L>> "%OVPN_FILE%"
+    )
+    if "%%L"=="-----END PRIVATE KEY-----" (
+        set "INSIDE_KEY=0"
+    )
+)
+echo ^</key^>>> "%OVPN_FILE%"
+```
+
+#### Embutir ta.key
+
+```bat
+echo ^<tls-auth^>>> "%OVPN_FILE%"
+type "%TA_FILE%" >> "%OVPN_FILE%"
+echo ^</tls-auth^>>> "%OVPN_FILE%"
+```
+
+### Passo 9 — Finalização
+
+```bat
+echo ============================================================
+echo   Processo concluido com sucesso!
+echo   Arquivos gerados em: %DEST_DIR%
+echo ============================================================
+
+dir /b "%DEST_DIR%"
+pause
+```

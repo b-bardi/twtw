@@ -94,4 +94,4 @@ Pegar el Certificado TA.Key del Servidor
 
 21 - Altere o conteudo da linha 28 do arquivo ovpn para que ele receba o dominio publico do servidor, deve trocar o parametro Centinela.orpak-la.com pelo dominio publico do servidor. 
 
-22 -    
+22 - As proximas etapas serão a edição dos certificados dentro do arquivo ovpn, deve trocar o conteudo entre as tags <ca>, <cert>, <key> e <tls-auth> pelos certificados criados. Na tag <ca> deve ser colado o conteudo do arquivo ca.crt, na tag <cert> deve ser colado o conteudo entre -----BEGIN CERTIFICATE----- e -----END CERTIFICATE----- do arquivo cliente + ST + id da estação.crt, na tag <key> deve ser colado o conteudo entre -----BEGIN PRIVATE KEY----- e -----END PRIVATE KEY----- do arquivo cliente + ST + id da estação.key e na tag <tls-auth> deve ser colado o conteudo do arquivo ta.key.  

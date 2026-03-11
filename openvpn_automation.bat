@@ -70,16 +70,17 @@ REM ============================================================
 REM  Passo 11 - Acessar pasta do EasyRSA
 REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
+set "PATH=%CD%\bin;%PATH%"
 
 REM ============================================================
 REM  Passo 12 - Gerar requisicao do certificado (gen-req)
 REM ============================================================
-call .\easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
+sh.exe easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
 
 REM ============================================================
 REM  Passo 13 - Assinar certificado (sign-req)
 REM ============================================================
-call .\easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME%
+sh.exe easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME%
 
 REM ============================================================
 REM  Passo 15 - Copiar arquivo .key para pasta destino

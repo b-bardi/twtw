@@ -89,28 +89,29 @@ A partir deste ponto a saída é ocultada do usuário com `>nul 2>&1`.
 echo AGUARDE, ARQUIVOS SENDO CRIADOS
 
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
+set "PATH=%CD%\bin;%PATH%"
 ```
 
 #### Gerar requisição do certificado (gen-req)
 
 ```bat
-call .\easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass >nul 2>&1
+sh.exe easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
 ```
 
 #### Assinar certificado (sign-req)
 
 ```bat
-call .\easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME% >nul 2>&1
+sh.exe easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME%
 ```
 
 ### Passo 7 — Cópia dos Arquivos Gerados
 
 ```bat
 REM Copiar .key
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key" >nul 2>&1
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key"
 
 REM Copiar .crt
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt" >nul 2>&1
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt"
 
 REM Copiar ta.key
 copy /Y "C:\Program Files\OpenVPN\easy-rsa\keys\ta.key" "%DEST_DIR%\ta.key" >nul 2>&1

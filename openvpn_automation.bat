@@ -67,10 +67,9 @@ REM  Passo 10 - Ocultar saida dos proximos comandos
 REM ============================================================
 
 REM ============================================================
-REM  Passo 11 - Acessar pasta do EasyRSA e executar EasyRSA-Start.bat
+REM  Passo 11 - Acessar pasta do EasyRSA
 REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
-call EasyRSA-Start.bat >nul 2>&1
 
 REM ============================================================
 REM  Passo 12 - Gerar requisicao do certificado (gen-req)

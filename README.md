@@ -89,7 +89,6 @@ A partir deste ponto a saída é ocultada do usuário com `>nul 2>&1`.
 echo AGUARDE, ARQUIVOS SENDO CRIADOS
 
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
-call EasyRSA-Start.bat >nul 2>&1
 ```
 
 #### Gerar requisição do certificado (gen-req)

@@ -74,22 +74,22 @@ cd /d "C:\Program Files\OpenVPN\easy-rsa"
 REM ============================================================
 REM  Passo 12 - Gerar requisicao do certificado (gen-req)
 REM ============================================================
-call .\easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass >nul 2>&1
+call .\easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
 
 REM ============================================================
 REM  Passo 13 - Assinar certificado (sign-req)
 REM ============================================================
-call .\easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME% >nul 2>&1
+call .\easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME%
 
 REM ============================================================
 REM  Passo 15 - Copiar arquivo .key para pasta destino
 REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key" >nul 2>&1
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key"
 
 REM ============================================================
 REM  Passo 16 - Copiar arquivo .crt para pasta destino
 REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt" >nul 2>&1
+copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt"
 
 REM ============================================================
 REM  Passo 17 - Copiar arquivo ta.key para pasta destino

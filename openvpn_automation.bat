@@ -3,6 +3,22 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul 2>&1
 
 REM ============================================================
+REM  Verificar privilegios de Administrador
+REM ============================================================
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo.
+    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    echo   ERRO: VOCE PRECISA EXECUTAR COMO ADMINISTRADOR!
+    echo   Clique com o botao direito no arquivo e escolha 
+    echo   'Executar como administrador'.
+    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    echo.
+    pause
+    exit /b
+)
+
+REM ============================================================
 REM  Passo 1 - Mensagem inicial
 REM ============================================================
 echo ============================================================
@@ -88,11 +104,14 @@ REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
 set "PATH=%CD%\bin;%PATH%"
 
-REM --- Limpeza de arquivos de trava (lock-files) que impedem a execucao ---
-if exist "pki\.lock" del /f /q "pki\.lock" >nul 2>&1
+REM --- Limpeza de arquivos de trava que podem ter ficado de uma execucao anterior ---
+if exist "pki\.lock" (
+    echo Removendo arquivo de trava (lock-file) residual...
+    del /f /q "pki\.lock" >nul 2>&1
+)
 if exist "pki\extensions.temp" del /f /q "pki\extensions.temp" >nul 2>&1
 
-REM --- Limpeza de arquivos antigos com o mesmo nome para evitar erro de 'ja existe' ---
+REM --- Limpeza de arquivos antigos com o mesmo nome ---
 if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req" >nul 2>&1
 if exist "pki\private\%CERT_NAME%.key" del /f /q "pki\private\%CERT_NAME%.key" >nul 2>&1
 if exist "pki\issued\%CERT_NAME%.crt" del /f /q "pki\issued\%CERT_NAME%.crt" >nul 2>&1

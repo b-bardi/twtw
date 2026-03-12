@@ -32,7 +32,19 @@ Após a execução, a seguinte estrutura será criada:
 
 ## Comandos do Script (.bat)
 
-### Passo 1 — Configurações Iniciais
+### Passo 1 — Verificar privilégios de Administrador
+
+O script verifica logo no início se está sendo executado com privilégios de administrador, o que é mandatório para alterar arquivos na pasta do OpenVPN.
+
+```bat
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo ERRO: VOCE PRECISA EXECUTAR COMO ADMINISTRADOR!
+    exit /b
+)
+```
+
+### Passo 2 — Configurações Iniciais
 
 ```bat
 @echo off
@@ -40,7 +52,7 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul 2>&1
 ```
 
-### Passo 2 — Mensagem Inicial
+### Passo 3 — Mensagem Inicial
 
 ```bat
 echo ============================================================
@@ -48,7 +60,7 @@ echo   Automatizacao de criacao de novos arquivos da OPENVPN
 echo ============================================================
 ```
 
-### Passo 3 — Coleta de Dados do Usuário
+### Passo 4 — Coleta de Dados do Usuário
 
 ```bat
 set /p CLIENTE="Insira o nome do cliente: "
@@ -56,7 +68,7 @@ set /p ID_ESTACAO="Insira o id da estacao: "
 set /p DOMINIO="Insira o dominio publico do servidor: "
 ```
 
-### Passo 4 — Montagem do Nome do Certificado e Destino
+### Passo 5 — Montagem do Nome do Certificado e Destino
 
 O nome do certificado é composto por: `cliente + ST + id da estação`. O script também define o diretório de destino.
 
@@ -65,7 +77,7 @@ set "CERT_NAME=%CLIENTE%ST%ID_ESTACAO%"
 set "DEST_DIR=%~dp0%CLIENTE%\%ID_ESTACAO%"
 ```
 
-### Passo 5 — Alerta de Repetição de ID
+### Passo 6 — Alerta de Repetição de ID
 
 O script verifica se a pasta do cliente/id já existe. Caso exista, solicita confirmação para sobrescrever, evitando a perda de certificados antigos acidentalmente.
 
@@ -77,7 +89,7 @@ if exist "%DEST_DIR%" (
 )
 ```
 
-### Passo 6 — Criação de Pastas
+### Passo 7 — Criação de Pastas
 
 ```bat
 echo CRIANDO PASTAS
@@ -93,9 +105,9 @@ if not exist "%DEST_DIR%" (
 echo PASTAS CRIADAS COM SUCESSO
 ```
 
-### Passo 7 — Geração dos Certificados (EasyRSA)
+### Passo 8 — Geração dos Certificados (EasyRSA)
 
-Antes de gerar, o script realiza a limpeza de arquivos de trava (`lock-file`) e resíduos de tentativas anteriores.
+Antes de gerar, o script realiza a limpeza de arquivos de trava (`lock-file`) residuais de forma segura, sem interferir na VPN ativa.
 
 ```bat
 echo AGUARDE, ARQUIVOS SENDO CRIADOS
@@ -103,7 +115,7 @@ echo AGUARDE, ARQUIVOS SENDO CRIADOS
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
 set "PATH=%CD%\bin;%PATH%"
 
-REM Limpeza de lock-files e arquivos antigos
+REM Limpeza de lock-files e arquivos antigos de forma segura
 if exist "pki\.lock" del /f /q "pki\.lock"
 if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req"
 ```
@@ -120,7 +132,7 @@ sh.exe easyrsa --batch --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
 sh.exe easyrsa --batch --days=3650 sign-req client %CERT_NAME%
 ```
 
-### Passo 8 — Cópia dos Arquivos Gerados
+### Passo 9 — Cópia dos Arquivos Gerados
 
 ```bat
 REM Copiar .key
@@ -136,7 +148,7 @@ REM Copiar ca.crt
 copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\ca.crt" "%DEST_DIR%\ca.crt" >nul 2>&1
 ```
 
-### Passo 9 — Criação do Arquivo .ovpn
+### Passo 10 — Criação do Arquivo .ovpn
 
 O arquivo `.ovpn` é criado com o domínio público informado pelo usuário e com os certificados embutidos.
 
@@ -243,7 +255,7 @@ type "%TA_FILE%" >> "%OVPN_FILE%"
 echo ^</tls-auth^>>> "%OVPN_FILE%"
 ```
 
-### Passo 10 — Finalização
+### Passo 11 — Finalização
 
 ```bat
 echo ============================================================

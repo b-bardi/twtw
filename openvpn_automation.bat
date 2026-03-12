@@ -1,274 +1,143 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul 2>&1
 
-REM ============================================================
-REM  Verificar privilegios de Administrador
-REM ============================================================
+:: 1. Verificacao de Administrador
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo.
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    echo   ERRO: VOCE PRECISA EXECUTAR COMO ADMINISTRADOR!
-    echo   Clique com o botao direito no arquivo e escolha 
-    echo   'Executar como administrador'.
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    echo [ERRO] VOCE PRECISA EXECUTAR COMO ADMINISTRADOR.
+    echo Clique com o botao direito e escolha 'Executar como administrador'.
     echo.
     pause
     exit /b
 )
 
-REM ============================================================
-REM  Passo 1 - Mensagem inicial
-REM ============================================================
 echo ============================================================
-echo   Automatizacao de criacao de novos arquivos da OPENVPN
+echo   AUTORIZACAO OPENVPN - GERADOR DE CERTIFICADOS
 echo ============================================================
 echo.
 
-REM ============================================================
-REM  Passo 2 - Solicitar nome do cliente
-REM ============================================================
+:: 2. Coleta de Dados
 set /p CLIENTE="Insira o nome do cliente: "
-
-REM ============================================================
-REM  Passo 3 - Solicitar id da estacao
-REM ============================================================
 set /p ID_ESTACAO="Insira o id da estacao: "
-
-REM ============================================================
-REM  Passo 4 - Solicitar dominio publico do servidor
-REM ============================================================
 set /p DOMINIO="Insira o dominio publico do servidor: "
 
-REM ============================================================
-REM  Montar nome do certificado e destino
-REM ============================================================
 set "CERT_NAME=%CLIENTE%ST%ID_ESTACAO%"
 set "DEST_DIR=%~dp0%CLIENTE%\%ID_ESTACAO%"
 
-REM ============================================================
-REM  Passo 5 - Alerta de repeticao de ID
-REM ============================================================
+:: 3. Alerta de Repeticao
 if exist "%DEST_DIR%" (
     echo.
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    echo   AVISO: JA EXISTE UM CERTIFICADO PARA ESTE CLIENTE E ID!
-    echo   Caminho: %DEST_DIR%
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    echo.
-    set /p CONFIRM="Deseja sobrescrever e gerar um NOVO certificado? (S/N): "
-    if /i "!CONFIRM!"=="S" (
-        echo Entendido, prosseguindo com a sobrescrita...
-    ) else (
-        echo.
-        echo Operacao cancelada pelo usuario.
+    echo [!] AVISO: JA EXISTE UM CERTIFICADO PARA ESTE ID (%ID_ESTACAO%).
+    set /p CONFIRM="Deseja sobrescrever? (S/N): "
+    if /i "!CONFIRM!" NEQ "S" (
+        echo Cancelado.
         pause
         exit /b
     )
 )
 
-REM ============================================================
-REM  Passo 6 - Mensagem "CRIANDO PASTAS"
-REM ============================================================
-echo.
-echo CRIANDO PASTAS
+:: 4. Criacao de Pastas
+echo Criando pastas...
+if not exist "%~dp0%CLIENTE%" mkdir "%~dp0%CLIENTE%"
+if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"
 
-REM ============================================================
-REM  Passo 7 - Criar pastas (Cliente e Estacao)
-REM ============================================================
-if not exist "%~dp0%CLIENTE%" (
-    mkdir "%~dp0%CLIENTE%"
-)
-
-if not exist "%DEST_DIR%" (
-    mkdir "%DEST_DIR%"
-)
-
-REM ============================================================
-REM  Passo 8 - Mensagem "PASTAS CRIADAS COM SUCESSO"
-REM ============================================================
-echo PASTAS CRIADAS COM SUCESSO
-echo.
-
-REM ============================================================
-REM  Passo 9 - Mensagem "AGUARDE, ARQUIVOS SENDO CRIADOS"
-REM ============================================================
-echo AGUARDE, ARQUIVOS SENDO CRIADOS
-
-REM ============================================================
-REM  Passo 10 - Iniciar Processo de Geração
-REM ============================================================
-echo.
-echo [1/3] Acessando ferramentas do Easy-RSA...
-
-REM ============================================================
-REM  Passo 11 - Acessar pasta do EasyRSA
-REM ============================================================
-cd /d "C:\Program Files\OpenVPN\easy-rsa"
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERRO] Nao foi possivel acessar a pasta: C:\Program Files\OpenVPN\easy-rsa
+:: 5. Acesso ao Easy-RSA
+set "EASYRSA_PATH=C:\Program Files\OpenVPN\easy-rsa"
+if not exist "%EASYRSA_PATH%" (
+    echo [ERRO] Pasta nao encontrada: %EASYRSA_PATH%
     pause
     exit /b
 )
+
+cd /d "%EASYRSA_PATH%"
 set "PATH=%CD%\bin;%PATH%"
 
-REM --- Verificar se o binario essencial existe ---
-if not exist "bin\openssl.exe" (
-    echo [ERRO] Arquivo openssl.exe nao encontrado dentro da pasta bin do Easy-RSA.
+:: 6. Limpeza de Travas (Lock-files)
+if exist "pki\.lock" (
+    echo Removendo trava residual (lock-file)...
+    del /f /q "pki\.lock" >nul 2>&1
+)
+
+:: 7. Limpeza de Certificados Antigos com mesmo nome
+echo Preparando ambiente para o novo certificado...
+del /f /q "pki\reqs\%CERT_NAME%.req" >nul 2>&1
+del /f /q "pki\private\%CERT_NAME%.key" >nul 2>&1
+del /f /q "pki\issued\%CERT_NAME%.crt" >nul 2>&1
+
+:: 8. Geracao dos Certificados
+echo Gerando arquivos... (Aguarde)
+sh.exe easyrsa --batch --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
+if %errorlevel% neq 0 (
+    echo [ERRO] Falha na geracao da requisicao.
     pause
     exit /b
 )
 
-
-REM --- Limpeza de arquivos de trava que podem ter ficado de uma execucao anterior ---
-if exist "pki\.lock" (
-    echo Removendo arquivo de trava (lock-file) residual...
-    del /f /q "pki\.lock" >nul 2>&1
-)
-if exist "pki\extensions.temp" del /f /q "pki\extensions.temp" >nul 2>&1
-
-REM --- Limpeza de arquivos antigos com o mesmo nome ---
-if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req" >nul 2>&1
-if exist "pki\private\%CERT_NAME%.key" del /f /q "pki\private\%CERT_NAME%.key" >nul 2>&1
-if exist "pki\issued\%CERT_NAME%.crt" del /f /q "pki\issued\%CERT_NAME%.crt" >nul 2>&1
-
-echo [2/3] Gerando arquivos de seguranca (isso pode demorar 10-30 seg)...
-sh.exe easyrsa --batch --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
-if %errorlevel% neq 0 (
-    echo [ERRO] Falha ao gerar REQUISICAO (gen-req).
-    pause
-)
-
-echo [3/3] Assinando certificado...
+echo Assinando certificado...
 sh.exe easyrsa --batch --days=3650 sign-req client %CERT_NAME%
 if %errorlevel% neq 0 (
-    echo [ERRO] Falha ao ASSINAR certificado (sign-req).
+    echo [ERRO] Falha na assinatura do certificado.
     pause
+    exit /b
 )
 
+:: 9. Copia de Arquivos
+echo Coletando arquivos gerados...
+copy /Y "pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key" >nul
+copy /Y "pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt" >nul
+copy /Y "keys\ta.key" "%DEST_DIR%\ta.key" >nul 2>&1
+copy /Y "pki\ca.crt" "%DEST_DIR%\ca.crt" >nul 2>&1
 
-REM ============================================================
-REM  Passo 15 - Copiar arquivo .key para pasta destino
-REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\private\%CERT_NAME%.key" "%DEST_DIR%\%CERT_NAME%.key"
-
-REM ============================================================
-REM  Passo 16 - Copiar arquivo .crt para pasta destino
-REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\issued\%CERT_NAME%.crt" "%DEST_DIR%\%CERT_NAME%.crt"
-
-REM ============================================================
-REM  Passo 17 - Copiar arquivo ta.key para pasta destino
-REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\keys\ta.key" "%DEST_DIR%\ta.key" >nul 2>&1
-
-REM ============================================================
-REM  Passo 18 - Copiar arquivo ca.crt para pasta destino
-REM ============================================================
-copy /Y "C:\Program Files\OpenVPN\easy-rsa\pki\ca.crt" "%DEST_DIR%\ca.crt" >nul 2>&1
-
-REM ============================================================
-REM  Passo 20 - Criar arquivo .ovpn
-REM  Passo 21 - Inserir dominio publico do servidor
-REM  Passo 22 - Embutir certificados no arquivo .ovpn
-REM ============================================================
-
+:: 10. Criacao do .ovpn
 set "OVPN_FILE=%DEST_DIR%\%CERT_NAME%.ovpn"
-set "CA_FILE=%DEST_DIR%\ca.crt"
-set "CERT_FILE=%DEST_DIR%\%CERT_NAME%.crt"
-set "KEY_FILE=%DEST_DIR%\%CERT_NAME%.key"
-set "TA_FILE=%DEST_DIR%\ta.key"
-
-REM --- Escrever cabecalho do .ovpn ---
 (
-    echo #
-    echo # General
-    echo #
     echo client
+    echo dev tun
+    echo proto udp
+    echo remote %DOMINIO% 1194
+    echo resolv-retry infinite
+    echo nobind
     echo persist-key
     echo persist-tun
-    echo pull
-    echo verb 0
-    echo #
-    echo # Binding
-    echo #
-    echo nobind
-    echo #
-    echo # Ciphers y Hardening
-    echo #
+    echo remote-cert-tls server
     echo auth SHA1
-    echo auth-nocache
-    echo #Se agregan los dos formatos para que funcione con versiones nuevas y antiguas de OpenVPN
     echo data-ciphers AES-256-GCM:AES-256-CBC
     echo comp-lzo
     echo key-direction 1
-    echo remote-cert-tls server
-    echo tls-client
-    echo #
-    echo # Network
-    echo #
-    echo dev tun
-    echo remote %DOMINIO% 1194
-    echo resolv-retry infinite
-    echo #
-    echo # Certificates
-    echo #
+    echo verb 3
+    echo.
+    echo ^<ca^>
+    type "%DEST_DIR%\ca.crt"
+    echo ^</ca^>
+    echo.
+    echo ^<cert^>
+    set "in_cert=0"
+    for /f "usebackq delims=" %%l in ("%DEST_DIR%\%CERT_NAME%.crt") do (
+        if "%%l"=="-----BEGIN CERTIFICATE-----" set "in_cert=1"
+        if !in_cert!==1 echo %%l
+        if "%%l"=="-----END CERTIFICATE-----" set "in_cert=0"
+    )
+    echo ^</cert^>
+    echo.
+    echo ^<key^>
+    set "in_key=0"
+    for /f "usebackq delims=" %%l in ("%DEST_DIR%\%CERT_NAME%.key") do (
+        if "%%l"=="-----BEGIN PRIVATE KEY-----" set "in_key=1"
+        if !in_key!==1 echo %%l
+        if "%%l"=="-----END PRIVATE KEY-----" set "in_key=0"
+    )
+    echo ^</key^>
+    echo.
+    echo ^<tls-auth^>
+    type "%DEST_DIR%\ta.key"
+    echo ^</tls-auth^>
 ) > "%OVPN_FILE%"
 
-REM --- Embutir ca.crt ---
-echo ^<ca^>>> "%OVPN_FILE%"
-type "%CA_FILE%" >> "%OVPN_FILE%"
-echo ^</ca^>>> "%OVPN_FILE%"
-
-REM --- Embutir certificado .crt (somente bloco BEGIN/END CERTIFICATE) ---
-echo ^<cert^>>> "%OVPN_FILE%"
-set "INSIDE_CERT=0"
-for /f "usebackq delims=" %%L in ("%CERT_FILE%") do (
-    if "%%L"=="-----BEGIN CERTIFICATE-----" (
-        set "INSIDE_CERT=1"
-    )
-    if !INSIDE_CERT!==1 (
-        echo %%L>> "%OVPN_FILE%"
-    )
-    if "%%L"=="-----END CERTIFICATE-----" (
-        set "INSIDE_CERT=0"
-    )
-)
-echo ^</cert^>>> "%OVPN_FILE%"
-
-REM --- Embutir chave .key (somente bloco BEGIN/END PRIVATE KEY) ---
-echo ^<key^>>> "%OVPN_FILE%"
-set "INSIDE_KEY=0"
-for /f "usebackq delims=" %%L in ("%KEY_FILE%") do (
-    if "%%L"=="-----BEGIN PRIVATE KEY-----" (
-        set "INSIDE_KEY=1"
-    )
-    if !INSIDE_KEY!==1 (
-        echo %%L>> "%OVPN_FILE%"
-    )
-    if "%%L"=="-----END PRIVATE KEY-----" (
-        set "INSIDE_KEY=0"
-    )
-)
-echo ^</key^>>> "%OVPN_FILE%"
-
-REM --- Embutir ta.key ---
-echo ^<tls-auth^>>> "%OVPN_FILE%"
-type "%TA_FILE%" >> "%OVPN_FILE%"
-echo ^</tls-auth^>>> "%OVPN_FILE%"
-
-REM ============================================================
-REM  Finalizacao
-REM ============================================================
 echo.
 echo ============================================================
-echo   Processo concluido com sucesso!
-echo   Arquivos gerados em: %DEST_DIR%
+echo   PROCESSO CONCLUIDO COM SUCESSO!
+echo   Local: %DEST_DIR%
 echo ============================================================
-echo.
-echo Arquivos na pasta:
-dir /b "%DEST_DIR%"
 echo.
 pause

@@ -26,27 +26,43 @@ REM ============================================================
 set /p DOMINIO="Insira o dominio publico do servidor: "
 
 REM ============================================================
-REM  Montar nome do certificado: cliente + ST + id da estacao
+REM  Montar nome do certificado e destino
 REM ============================================================
 set "CERT_NAME=%CLIENTE%ST%ID_ESTACAO%"
+set "DEST_DIR=%~dp0%CLIENTE%\%ID_ESTACAO%"
 
 REM ============================================================
-REM  Passo 5 - Mensagem "CRIANDO PASTAS"
+REM  Passo 5 - Alerta de repeticao de ID
+REM ============================================================
+if exist "%DEST_DIR%" (
+    echo.
+    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    echo   AVISO: JA EXISTE UM CERTIFICADO PARA ESTE CLIENTE E ID!
+    echo   Caminho: %DEST_DIR%
+    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    echo.
+    set /p CONFIRM="Deseja sobrescrever e gerar um NOVO certificado? (S/N): "
+    if /i "!CONFIRM!" NEQ "S" (
+        echo.
+        echo Operacao cancelada pelo usuario.
+        pause
+        exit /b
+    )
+)
+
+REM ============================================================
+REM  Passo 6 - Mensagem "CRIANDO PASTAS"
 REM ============================================================
 echo.
 echo CRIANDO PASTAS
 
 REM ============================================================
-REM  Passo 6 - Criar pasta com nome do cliente
+REM  Passo 7 - Criar pastas (Cliente e Estacao)
 REM ============================================================
 if not exist "%~dp0%CLIENTE%" (
     mkdir "%~dp0%CLIENTE%"
 )
 
-REM ============================================================
-REM  Passo 7 - Criar pasta com id da estacao dentro da pasta do cliente
-REM ============================================================
-set "DEST_DIR=%~dp0%CLIENTE%\%ID_ESTACAO%"
 if not exist "%DEST_DIR%" (
     mkdir "%DEST_DIR%"
 )
@@ -72,15 +88,24 @@ REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
 set "PATH=%CD%\bin;%PATH%"
 
+REM --- Limpeza de arquivos de trava (lock-files) que impedem a execucao ---
+if exist "pki\.lock" del /f /q "pki\.lock" >nul 2>&1
+if exist "pki\extensions.temp" del /f /q "pki\extensions.temp" >nul 2>&1
+
+REM --- Limpeza de arquivos antigos com o mesmo nome para evitar erro de 'ja existe' ---
+if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req" >nul 2>&1
+if exist "pki\private\%CERT_NAME%.key" del /f /q "pki\private\%CERT_NAME%.key" >nul 2>&1
+if exist "pki\issued\%CERT_NAME%.crt" del /f /q "pki\issued\%CERT_NAME%.crt" >nul 2>&1
+
 REM ============================================================
 REM  Passo 12 - Gerar requisicao do certificado (gen-req)
 REM ============================================================
-sh.exe easyrsa --batch --silent --silent-ssl --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
+sh.exe easyrsa --batch --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
 
 REM ============================================================
 REM  Passo 13 - Assinar certificado (sign-req)
 REM ============================================================
-sh.exe easyrsa --batch --silent --silent-ssl --days=3650 sign-req client %CERT_NAME%
+sh.exe easyrsa --batch --days=3650 sign-req client %CERT_NAME%
 
 REM ============================================================
 REM  Passo 15 - Copiar arquivo .key para pasta destino

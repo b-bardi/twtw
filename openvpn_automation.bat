@@ -97,8 +97,10 @@ REM ============================================================
 echo AGUARDE, ARQUIVOS SENDO CRIADOS
 
 REM ============================================================
-REM  Passo 10 - Ocultar saida dos proximos comandos
+REM  Passo 10 - Iniciar Processo de Geração
 REM ============================================================
+echo.
+echo [1/3] Acessando ferramentas do Easy-RSA...
 
 REM ============================================================
 REM  Passo 11 - Acessar pasta do EasyRSA
@@ -106,13 +108,19 @@ REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
 if %errorlevel% neq 0 (
     echo.
-    echo [ERRO] Nao foi possivel acessar a pasta do EasyRSA.
-    echo Verifique se o OpenVPN esta instalado corretamente.
-    echo.
+    echo [ERRO] Nao foi possivel acessar a pasta: C:\Program Files\OpenVPN\easy-rsa
     pause
     exit /b
 )
 set "PATH=%CD%\bin;%PATH%"
+
+REM --- Verificar se o binario essencial existe ---
+if not exist "bin\openssl.exe" (
+    echo [ERRO] Arquivo openssl.exe nao encontrado dentro da pasta bin do Easy-RSA.
+    pause
+    exit /b
+)
+
 
 REM --- Limpeza de arquivos de trava que podem ter ficado de uma execucao anterior ---
 if exist "pki\.lock" (
@@ -126,15 +134,20 @@ if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req" >nul 2>
 if exist "pki\private\%CERT_NAME%.key" del /f /q "pki\private\%CERT_NAME%.key" >nul 2>&1
 if exist "pki\issued\%CERT_NAME%.crt" del /f /q "pki\issued\%CERT_NAME%.crt" >nul 2>&1
 
-REM ============================================================
-REM  Passo 12 - Gerar requisicao do certificado (gen-req)
-REM ============================================================
+echo [2/3] Gerando arquivos de seguranca (isso pode demorar 10-30 seg)...
 sh.exe easyrsa --batch --req-cn="%CERT_NAME%" gen-req %CERT_NAME% nopass
+if %errorlevel% neq 0 (
+    echo [ERRO] Falha ao gerar REQUISICAO (gen-req).
+    pause
+)
 
-REM ============================================================
-REM  Passo 13 - Assinar certificado (sign-req)
-REM ============================================================
+echo [3/3] Assinando certificado...
 sh.exe easyrsa --batch --days=3650 sign-req client %CERT_NAME%
+if %errorlevel% neq 0 (
+    echo [ERRO] Falha ao ASSINAR certificado (sign-req).
+    pause
+)
+
 
 REM ============================================================
 REM  Passo 15 - Copiar arquivo .key para pasta destino

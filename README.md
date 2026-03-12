@@ -126,6 +126,8 @@ set "PATH=%CD%\bin;%PATH%"
 
 REM Limpeza de lock-files e arquivos antigos de forma segura
 if exist "pki\.lock" del /f /q "pki\.lock"
+if exist "pki\lock.file" del /f /q "pki\lock.file"
+if exist "pki\index.txt.lock" del /f /q "pki\index.txt.lock"
 if exist "pki\reqs\%CERT_NAME%.req" del /f /q "pki\reqs\%CERT_NAME%.req"
 ```
 

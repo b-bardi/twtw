@@ -4,4 +4,4 @@
 
 Projeto de criação de um arquivo .bat para automatização de criação de novos arquivos da OPENVPN
 
-Este projeto vai conter um arquivo de 'README.md', com todo o comando usado no arquivo .bat 
+Este projeto vai conter um arquivo de 'README.md', com todo o comando usado no arquivo .bat, toda alteração deve ser registrada no arquivo readme.md

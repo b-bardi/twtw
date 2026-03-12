@@ -58,7 +58,9 @@ if exist "%DEST_DIR%" (
     echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     echo.
     set /p CONFIRM="Deseja sobrescrever e gerar um NOVO certificado? (S/N): "
-    if /i "!CONFIRM!" NEQ "S" (
+    if /i "!CONFIRM!"=="S" (
+        echo Entendido, prosseguindo com a sobrescrita...
+    ) else (
         echo.
         echo Operacao cancelada pelo usuario.
         pause
@@ -102,6 +104,14 @@ REM ============================================================
 REM  Passo 11 - Acessar pasta do EasyRSA
 REM ============================================================
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERRO] Nao foi possivel acessar a pasta do EasyRSA.
+    echo Verifique se o OpenVPN esta instalado corretamente.
+    echo.
+    pause
+    exit /b
+)
 set "PATH=%CD%\bin;%PATH%"
 
 REM --- Limpeza de arquivos de trava que podem ter ficado de uma execucao anterior ---

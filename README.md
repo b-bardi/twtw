@@ -85,7 +85,11 @@ O script verifica se a pasta do cliente/id já existe. Caso exista, solicita con
 if exist "%DEST_DIR%" (
     echo AVISO: JA EXISTE UM CERTIFICADO PARA ESTE CLIENTE E ID!
     set /p CONFIRM="Deseja sobrescrever e gerar um NOVO certificado? (S/N): "
-    if /i "!CONFIRM!" NEQ "S" exit /b
+    if /i "!CONFIRM!"=="S" (
+        echo Prosseguindo...
+    ) else (
+        exit /b
+    )
 )
 ```
 
@@ -113,6 +117,11 @@ Antes de gerar, o script realiza a limpeza de arquivos de trava (`lock-file`) re
 echo AGUARDE, ARQUIVOS SENDO CRIADOS
 
 cd /d "C:\Program Files\OpenVPN\easy-rsa"
+if %errorlevel% neq 0 (
+    echo [ERRO] Nao foi possivel acessar a pasta do EasyRSA.
+    pause
+    exit /b
+)
 set "PATH=%CD%\bin;%PATH%"
 
 REM Limpeza de lock-files e arquivos antigos de forma segura
